@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Momentum - Productivité Pro</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body data-theme="pastel" data-view="cards">
+  <!-- Timer Pomodoro Flottant -->
+  <div id="pomodoroPanel" class="pomodoro-panel" hidden>
+    <div class="pomo-header">🍅 Focus Pomodoro</div>
+    <div class="pomo-task" id="pomoTaskName">Aucune tâche</div>
+    <div class="pomo-timer" id="pomoTime">25:00</div>
+    <div class="pomo-controls">
+      <button id="pomoActionBtn">▶ Démarrer</button>
+      <button id="pomoCloseBtn">❌</button>
+    </div>
+  </div>
+
+  <header class="app-header">
+    <div class="header-left">
+       <h1 class="logo">✔️ Momentum</h1>
+    </div>
+    <div class="header-right">
+       <select id="themeSelect" class="theme-select" title="Gérer le thème">
+          <option value="auto">🔄 Préréglage Auto (Jour/Nuit)</option>
+          <option value="pastel">Dashboard Pastel</option>
+          <option value="bureau">Bureau Classique</option>
+          <option value="carnet">Carnet de notes</option>
+          <option value="neon">Néon Clair (Sombre)</option>
+          <option value="cyberpunk">Cyberpunk Neon</option>
+          <option value="nature">Forêt Zen</option>
+          <option value="minimalist">Minimaliste</option>
+       </select>
+       <div class="view-toggles">
+         <button class="view-btn active" data-view="cards" title="Vue Liste Structurée">Cartes</button>
+         <button class="view-btn" data-view="compact" title="Vue Simple">Compacte</button>
+         <button class="view-btn" data-view="kanban" title="Tableau À faire, Fait">Kanban</button>
+         <button class="view-btn" data-view="analytics" title="Analysez vos performances">📊 Stats</button>
+         <button class="view-btn" data-view="zen" title="Une seule tâche à la fois">🧘 Zen</button>
+         <button class="view-btn" data-view="archives" title="Vos archives complétées">🗄️ Archives</button>
+       </div>
+    </div>
+  </header>
+
+  <main class="app-shell">
+    <aside class="sidebar">
+      <section class="hero-card">
+        <p id="greetingText" class="eyebrow">Bonjour !</p>
+        <h2>Espace de travail</h2>
+        
+        <!-- Gamification XP Bar -->
+        <div class="xp-wrapper">
+          <div class="xp-header">
+            <span class="xp-level" id="levelText">Niveau 1</span>
+            <span class="xp-points" id="xpText">0 XP</span>
+          </div>
+          <div class="xp-bar">
+            <div class="xp-fill" id="xpFill" style="width: 0%"></div>
+          </div>
+        </div>
+        
+        <div class="stats-grid">
+          <article class="stat-card">
+            <span class="stat-label">À faire</span>
+            <strong id="todoTasks">0</strong>
+          </article>
+          <article class="stat-card">
+            <span class="stat-label">Terminées</span>
+            <strong id="completedTasks">0</strong>
+          </article>
+        </div>
+        <button id="archiveDoneBtn" class="ghost-btn" style="width:100%; margin-top:1rem;">🗃️ Archiver le terminé</button>
+      </section>
+
+      <section class="calendar-card">
+        <h3>🏷️ Tags détectés</h3>
+        <div id="tagsList" class="tags-list"></div>
+      </section>
+
+      <section class="calendar-card" id="calendarSection" style="cursor: pointer;" title="Cliquez pour étendre ou réduire la vue">
+        <h3>⏳ À venir</h3>
+        <ul id="calendarList" class="calendar-list"></ul>
+      </section>
+    </aside>
+
+    <section class="board-card">
+      <form class="task-form" id="taskForm">
+        <div class="form-row">
+          <input
+            id="taskInput"
+            name="task"
+            type="text"
+            maxlength="200"
+            placeholder="Titre de la tâche (ajoutez des #tags)..."
+            required autocomplete="off"
+          />
+          <button type="submit">Ajouter</button>
+        </div>
+
+        <div class="form-grid">
+          <label class="field">
+            <span>Catégorie</span>
+            <select id="taskCategory"></select>
+          </label>
+          <label class="field">
+            <span>Priorité (Exp)</span>
+            <select id="taskPriority">
+              <option value="high">Haute (+50 XP)</option>
+              <option value="medium">Moyenne (+25 XP)</option>
+              <option value="low">Basse (+10 XP)</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Échéance</span>
+            <input id="taskDueDate" type="date" />
+          </label>
+          <label class="field">
+            <span>Récurrence</span>
+            <select id="taskRecurrence">
+              <option value="none">Aucune</option>
+              <option value="daily">Quotidienne</option>
+              <option value="weekly">Hebdomadaire</option>
+              <option value="monthly">Mensuelle</option>
+            </select>
+          </label>
+        </div>
+      </form>
+
+      <div class="utility-bar">
+        <input id="searchInput" type="search" placeholder="Rechercher / filtrer..." style="flex:1; max-width:400px"/>
+        <select id="categoryFilter" style="max-width:250px;"></select>
+      </div>
+
+      <div class="board-container" id="boardContainer"></div>
+    </section>
+  </main>
+
+  <template id="taskItemTemplate">
+    <div class="task-item" draggable="true">
+      <label class="task-check">
+        <input class="task-toggle" type="checkbox" />
+        <span class="custom-check"></span>
+      </label>
+
+      <div class="task-body">
+        <div class="task-view">
+          <div class="task-topline">
+            <p class="task-text"></p>
+            <div class="task-badges">
+              <span class="task-badge category-badge"></span>
+              <span class="task-badge priority-badge"></span>
+              <span class="task-badge due-badge"></span>
+              <span class="task-badge recur-badge" title="Tâche Récurrente" hidden>🔁</span>
+            </div>
+          </div>
+          <div class="subtasks-container"></div>
+          <div class="subtask-input-row" hidden>
+            <input type="text" class="subtask-add-input" placeholder="Ajouter une sous-tâche... (Entrée)"/>
+          </div>
+          <p class="task-meta"></p>
+        </div>
+
+        <div class="task-editor" hidden>
+          <input class="edit-input" type="text" style="width:100%; margin-bottom: 0.5rem;"/>
+          <div class="form-grid">
+            <select class="edit-category"></select>
+            <select class="edit-priority">
+              <option value="high">Haute</option>
+              <option value="medium">Moyenne</option>
+              <option value="low">Basse</option>
+            </select>
+            <input class="edit-due-date" type="date" />
+            <select class="edit-recurrence">
+              <option value="none">Sans récurr.</option>
+              <option value="daily">Quotidienne</option>
+              <option value="weekly">Hebdomadaire</option>
+              <option value="monthly">Mensuelle</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="task-actions task-actions-view">
+        <button class="action-btn pomo-start-btn" title="Lancer un Pomodoro">⏱️</button>
+        <button class="action-btn add-subtask-btn" title="Ajouter une sous-tâche">☑️</button>
+        <button class="action-btn edit-btn" title="Modifier">✏️</button>
+        <button class="action-btn delete-btn" title="Supprimer">🗑️</button>
+      </div>
+
+      <div class="task-actions task-actions-edit" hidden>
+        <button class="action-btn save-btn">OK</button>
+        <button class="action-btn cancel-btn">Annuler</button>
+      </div>
+    </div>
+  </template>
+
+  <script src="script.js"></script>
+</body>
+</html>
